@@ -58,9 +58,9 @@ void putSVGWall(Wall w, void *file);
 
 void putSVGSegment(FILE *file, double x1, double y1, double x2, double y2);
 
-void putSVGTringle(FILE *file, double x1, double y1, double x2, double y2, double x3, double y3);
+void putSVGTriangle(FILE *file, double x1, double y1, double x2, double y2, double x3, double y3);
 
-void tests(FILE *file, double x, double y);
+void putSVGBomb(FILE *file, double x, double y);
 
 void putSVGEnd(FILE *file);
 

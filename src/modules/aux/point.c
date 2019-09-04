@@ -36,6 +36,10 @@ int Point_Compare(const void *p1Void, const void *p2Void) {
         return 1;
     else if (!p1->starting && p2->starting)
         return -1;
+    else if (Segment_GetDistance(p1->segment) < Segment_GetDistance(p2->segment))
+        return 1;
+    else if (Segment_GetDistance(p1->segment) > Segment_GetDistance(p2->segment))
+        return -1;
     else
         return 0;
 }

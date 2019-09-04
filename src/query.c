@@ -531,24 +531,51 @@ bool Query_Brl(FILE *outputFile, double x, double y) {
 
     int nSegments = nBuildings * 4 + nWalls;
 
-    Segment *segments = malloc(nSegments * 2 * sizeof(Segment));
+    Segment *segments = malloc((nSegments * 2 + 5) * sizeof(Segment));
     Segment *segmentsP = segments;
+
+    double maxX = 0, maxY = 0;
 
     // Colocar segmentos dos prédios na lista
     for (int p = StList_GetFirstPos(getBuildingList()); p != -1; p = StList_GetNextPos(getBuildingList(), p)) {
         Building b = StList_Get(getBuildingList(), p);
         segmentsP = Building_PutSegments(b, segmentsP, x, y);
+        double blockMaxX = Building_GetX(b) + Building_GetW(b);
+        if (blockMaxX > maxX)
+            maxX = blockMaxX;
+        double blockMaxY = Building_GetY(b) + Building_GetH(b);
+        if (blockMaxY > maxY)
+            maxY = blockMaxY;
     }
 
     // Colocar segmentos dos muros na lista
     for (int p = StList_GetFirstPos(getWallList()); p != -1; p = StList_GetNextPos(getWallList(), p)) {
         Wall w = StList_Get(getWallList(), p);
         segmentsP = Wall_PutSegments(w, segmentsP, x, y);
+        double wallMaxX = max(Wall_GetX1(w), Wall_GetX2(w));
+        if (wallMaxX > maxX)
+            maxX = wallMaxX;
+        double wallMaxY = max(Wall_GetY1(w), Wall_GetY2(w));
+        if (wallMaxY > maxY)
+            maxY = wallMaxY;
     }
 
-    printf("before: %d\n", nSegments);
+    maxX += 100;
+    maxY += 100;
+
+    Wall borders[4];
+    borders[0] = Wall_Create(0, 0, maxX, 0);
+    borders[1] = Wall_Create(maxX, 0, maxX, maxY);
+    borders[2] = Wall_Create(maxX, maxY, 0, maxY);
+    borders[3] = Wall_Create(0, maxY, 0, 0);
+    for (int i = 0; i < 4; i++) {
+        segmentsP = Wall_PutSegments(borders[i], segmentsP, x, y);
+        Wall_Destroy(borders[i]);
+    }
+
+    //printf("before: %d\n", nSegments);
     nSegments = segmentsP - segments;
-    printf("after: %d\n", nSegments);
+    //printf("after: %d\n", nSegments);
 
     int nPoints = nSegments * 2;
     Point *points = malloc(nPoints * sizeof(Point));
@@ -560,12 +587,9 @@ bool Query_Brl(FILE *outputFile, double x, double y) {
         points[2 * i + 1] = Segment_GetPEnd(s);
 
         // TODO: remover (teste)
-        // if (i % 4 == 0 || i % 4 == 3) {
-
-        //     Point p1 = Segment_GetPStart(s);
-        //     Point p2 = Segment_GetPEnd(s);
-        //     putSVGSegment(outputFile, Point_GetX(p1), Point_GetY(p1), Point_GetX(p2), Point_GetY(p2));
-        // }
+        // Point p1 = Segment_GetPStart(s);
+        // Point p2 = Segment_GetPEnd(s);
+        // putSVGSegment(outputFile, Point_GetX(p1), Point_GetY(p1), Point_GetX(p2), Point_GetY(p2));
     }
 
     // Ordenar pontos
@@ -612,15 +636,15 @@ bool Query_Brl(FILE *outputFile, double x, double y) {
             // Evitar divisão por zero
             if (Point_GetX(p2) == Point_GetX(p1)) {
                 currentXInter = Point_GetX(p1);
-                currentYInter = a1 * currentXInter + b1;
             } else {
                 // Coeficiente angular
                 double a2 = (Point_GetY(p2) - Point_GetY(p1)) / (Point_GetX(p2) - Point_GetX(p1));
                 // Termo independente
                 double b2 = Point_GetY(p1) - a2 * Point_GetX(p1);
                 currentXInter = (b2 - b1) / (a1 - a2);
-                currentYInter = a1 * currentXInter + b1;
             }
+
+            currentYInter = a1 * currentXInter + b1;
 
             // Distância entre o ponto de intersecção e o ponto central
             double distInter = euclideanDistance(x, y, currentXInter, currentYInter);
@@ -630,10 +654,10 @@ bool Query_Brl(FILE *outputFile, double x, double y) {
             // printf("distInter = %lf\n", distInter);
 
             // Segmento do ponto analisado não está à frente
-            if (distInter < dist || fabs(distInter - dist) < 0.0000001) {
+            if (distInter < dist || fabs(distInter - dist) < 0.000001) {
                 front = false;
                 break;
-            } else if (distInter >= dist && (minDist == -1 || distInter < minDist)) {
+            } else if (distInter >= dist && (minDist == -1 || distInter <= minDist)) {
                 minDist = distInter;
                 closestSegmentBehind = currentSegment;
                 xInter = currentXInter;
@@ -645,14 +669,10 @@ bool Query_Brl(FILE *outputFile, double x, double y) {
             // Se o segmento estiver na frente de todos os ativos
             if (!Point_IsStarting(p)) {
                 // Se o ponto for final
-                tests(outputFile, xInter, yInter);
-                char id[32];
-                sprintf(id, "%d", i);
-                putSVGText(outputFile, xInter, yInter, id);
                 double xBiombo = Segment_GetXBiombo(s);
                 double yBiombo = Segment_GetYBiombo(s);
                 // Colocar luz a partir do biombo do segmento até o ponto
-                putSVGTringle(outputFile, xBiombo, yBiombo, x, y, Point_GetX(p), Point_GetY(p));
+                putSVGTriangle(outputFile, xBiombo, yBiombo, x, y, Point_GetX(p), Point_GetY(p));
                 if (closestSegmentBehind != NULL) {
                     // Se houver um segmento atrás
                     // Definir o biombo deste segmento como o ponto de intersecção
@@ -666,7 +686,7 @@ bool Query_Brl(FILE *outputFile, double x, double y) {
                 double yBiombo = Segment_GetYBiombo(closestSegmentBehind);
                 // Colocar luz a partir do biombo deste segmento até o ponto de intersecção
                 // entre ele e a reta
-                putSVGTringle(outputFile, xBiombo, yBiombo, x, y, xInter, yInter);
+                putSVGTriangle(outputFile, xBiombo, yBiombo, x, y, xInter, yInter);
             }
         }
 
@@ -675,13 +695,14 @@ bool Query_Brl(FILE *outputFile, double x, double y) {
             added++;
             
         } else {
-            StList_Remove(activeSegments, compareAddr, s);
+            if (StList_Remove(activeSegments, compareAddr, s) == NULL)
+                printf("aaaaaaaaaaaaa\n");
             removed++;
         }
 
         // TODO: remover (teste)
-        // char id[16];
-        // sprintf(id, "%d", i + 1);
+        char id[16];
+        // sprintf(id, "%.2lf", Point_GetAngle(p));
         // if (Point_IsStarting(p))
         //     putSVGText(outputFile, Point_GetX(p), Point_GetY(p), id);
         // else
@@ -689,19 +710,18 @@ bool Query_Brl(FILE *outputFile, double x, double y) {
         
     }
 
-    printf("added: %d, removed: %d\n", added, removed);
+    putSVGBomb(outputFile, x, y);
+    //putSVGPoint(outputFile, x, y, true);
 
-    StList_Destroy(activeSegments, Segment_Destroy);
+    printf("added: %d, removed: %d\n", added, removed);
 
     free(points);
 
-    putSVGPoint(outputFile, x, y, true);
-
+    StList_Destroy(activeSegments, Segment_Destroy);
     for (int i = 0; i < nSegments; i++) {
         Segment_Destroy(segments[i]);
     }
-
     free(segments);
 
-
+    return true;
 }

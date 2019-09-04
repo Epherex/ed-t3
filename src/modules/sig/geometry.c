@@ -94,8 +94,5 @@ double min(double a, double b) {
 }
 
 double calculateAngle(double y, double x) {
-    double angle = atan2(y, x);
-    //if (angle < 0)
-    //    angle += 2 * PI;
-    return angle;
+    return atan2(y, x);
 }

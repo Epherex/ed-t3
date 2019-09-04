@@ -18,32 +18,19 @@ Wall Wall_Create(double x1, double y1, double x2, double y2) {
     return wall;
 }
 
-#include <stdio.h>
-
-Segment *Wall_PutSegments(Wall wallVoid, Segment *vector, double x, double y) {
+Segment *Wall_PutSegments(Wall wallVoid, Segment *vector, double xSource, double ySource) {
     WallPtr wall = (WallPtr) wallVoid;
-    Segment seg = Segment_CreateFromCoords(wall->x1, wall->y1, wall->x2, wall->y2, x, y);
+
+    if (wall->x1 == wall->x2 && wall->x1 == xSource || wall->y1 == wall->y2 && wall->y1 == ySource)
+        return vector;
+
+    Segment seg = Segment_CreateFromCoords(wall->x1, wall->y1, wall->x2, wall->y2, xSource, ySource);
     (*vector++) = seg;
 
-    double xinter = Segment_CheckXIntersection(seg, y);
-    if (xinter <= x && xinter <= max(wall->x1, wall->x2) && xinter >= min(wall->x1, wall->x2)) {
-        double distance = fabs(xinter - x);
-        Point pAbove = Point_Create(xinter, y, seg, -PI, distance);
-        Point oldPStart = Segment_GetPStart(seg);
-        Point oldPEnd = Segment_GetPEnd(seg);
-        Segment_SetPStart(seg, pAbove);
-        Segment_SetPEnd(seg, oldPStart);
-        Point_SetStarting(pAbove, true);
-        Point_SetStarting(oldPStart, false);
-        //printf("----------- %.2lf %.2lf\n", Point_GetX(oldPStart), Point_GetY(oldPStart));
-
-        Point pBelow = Point_Create(xinter, y, NULL, PI, distance);
-        Segment newSeg = Segment_Create(oldPEnd, pBelow);
-        Point_SetSegment(pBelow, newSeg);
-        Point_SetSegment(oldPEnd, newSeg);
-        Point_SetStarting(oldPEnd, true);
-        Point_SetStarting(pBelow, false);
-        *(vector++) = newSeg;
+    double xInter = Segment_CheckXIntersection(seg, ySource);
+    // Intersecção com a reta
+    if (xInter <= xSource && xInter <= max(wall->x1, wall->x2) && xInter >= min(wall->x1, wall->x2)) {
+        vector = Segment_Cut(seg, vector, xInter, xSource, ySource);
     }
 
     return vector;

@@ -5,6 +5,7 @@ typedef struct segment_t {
     Point pEnd;
     double xBiombo;
     double yBiombo;
+    double distance;
 } *SegmentPtr;
 
 Segment Segment_Create(Point pStart, Point pEnd) {
@@ -37,6 +38,7 @@ Segment Segment_CreateFromCoords(double x1, double y1, double x2, double y2, dou
     }
     segment->xBiombo = Point_GetX(segment->pStart);
     segment->yBiombo = Point_GetY(segment->pStart);
+    segment->distance = euclideanDistance(x, y, (x1 + x2) / 2, (y1 + y2) / 2);
     return segment;
 }
 
@@ -46,7 +48,7 @@ double Segment_CheckXIntersection(Segment segmentVoid, double y) {
     Point p2 = segment->pEnd;
 
     if (Point_GetX(p1) == Point_GetX(p2)) {
-        if (y >= min(Point_GetY(p1), Point_GetY(p2)) && y <= max(Point_GetY(p1), Point_GetY(p2)))
+        if (y > min(Point_GetY(p1), Point_GetY(p2)) && y <= max(Point_GetY(p1), Point_GetY(p2)))
             return Point_GetX(p1);
         else
             return -1;
@@ -56,6 +58,41 @@ double Segment_CheckXIntersection(Segment segmentVoid, double y) {
     double b = Point_GetY(p1) - a * Point_GetX(p1);
 
     return (y - b)/a;
+}
+
+Segment *Segment_Cut(Segment segment, Segment *vector, double xInter, double xSource, double ySource) {
+    Point oldPStart = Segment_GetPStart(segment);
+    Point oldPEnd = Segment_GetPEnd(segment);
+
+    if (Point_GetY(oldPEnd) == ySource) {
+        Point_SetAngle(oldPEnd, -PI);
+        Point_SetStarting(oldPEnd, true);
+        Segment_SetPStart(segment, oldPEnd);
+
+        Point_SetStarting(oldPStart, false);
+        Segment_SetPEnd(segment, oldPStart);
+
+        return vector;
+    }
+
+    double distance = fabs(xInter - xSource);
+    Point pAbove = Point_Create(xInter, ySource, segment, -PI, distance);
+    Segment_SetPStart(segment, pAbove);
+    Segment_SetPEnd(segment, oldPStart);
+    Point_SetStarting(pAbove, true);
+    Point_SetStarting(oldPStart, false);
+
+    Point pBelow = Point_Create(xInter, ySource, NULL, PI, distance);
+    Segment newSeg = Segment_Create(oldPEnd, pBelow);
+    double newDist = euclideanDistance(xSource, ySource, (Point_GetX(oldPEnd) + Point_GetX(pBelow))/2, (Point_GetY(oldPEnd) + Point_GetY(pBelow))/2);
+    Segment_SetDistance(newSeg, newDist);
+    Point_SetSegment(pBelow, newSeg);
+    Point_SetSegment(oldPEnd, newSeg);
+    Point_SetStarting(oldPEnd, true);
+    Point_SetStarting(pBelow, false);
+    *(vector++) = newSeg;
+
+    return vector;
 }
 
 Point Segment_GetPStart(Segment segmentVoid) {
@@ -78,6 +115,11 @@ double Segment_GetYBiombo(Segment segmentVoid) {
     return segment->yBiombo;
 }
 
+double Segment_GetDistance(Segment segmentVoid) {
+    SegmentPtr segment = (SegmentPtr) segmentVoid;
+    return segment->distance;
+}
+
 void Segment_SetPStart(Segment segmentVoid, Point pStart) {
     SegmentPtr segment = (SegmentPtr) segmentVoid;
     segment->pStart = pStart;
@@ -98,6 +140,11 @@ void Segment_SetXBiombo(Segment segmentVoid, double xBiombo) {
 void Segment_SetYBiombo(Segment segmentVoid, double yBiombo) {
     SegmentPtr segment = (SegmentPtr) segmentVoid;
     segment->yBiombo = yBiombo;
+}
+
+void Segment_SetDistance(Segment segmentVoid, double distance) {
+    SegmentPtr segment = (SegmentPtr) segmentVoid;
+    segment->distance = distance;
 }
 
 void Segment_Destroy(Segment segmentVoid) {

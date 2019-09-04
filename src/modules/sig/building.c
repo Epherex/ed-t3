@@ -1,5 +1,4 @@
 #include "building.h"
-#include <stdlib.h>
 
 typedef struct building_t {
     double x;
@@ -19,62 +18,44 @@ Building Building_Create(double x, double y, double w, double h, double num) {
     return building;
 }
 
-#include <stdio.h>
-
-Segment *Building_PutSegments(Building buildingVoid, Segment *vector, double x, double y) {
+Segment *Building_PutSegments(Building buildingVoid, Segment *vector, double xSource, double ySource) {
     BuildingPtr b = (BuildingPtr) buildingVoid;
+
+    double xMin = b->x;
+    double xMax = b->x + b->w;
+    double yMin = b->y;
+    double yMax = b->y + b->h;
     
-    Segment southSeg = Segment_CreateFromCoords(b->x, b->y, b->x + b->w, b->y, x, y);
-    *(vector++) = southSeg;
+    Segment southSeg;
+    if (yMin != ySource) {
+        southSeg = Segment_CreateFromCoords(xMin, yMin, xMax, yMin, xSource, ySource);
+        *(vector++) = southSeg;
+    }
+    
+    Segment westSeg;
+    if (xMax != xSource) {
+        westSeg = Segment_CreateFromCoords(xMax, yMin, xMax, yMax, xSource, ySource);
+        *(vector++) = westSeg;
+    }
 
-    Segment northSeg = Segment_CreateFromCoords(b->x, b->y + b->h, b->x + b->w, b->y + b->h, x, y);
-    *(vector++) = northSeg;
+    Segment northSeg;
+    if (yMax != ySource) {
+        northSeg = Segment_CreateFromCoords(xMin, yMax, xMax, yMax, xSource, ySource);
+        *(vector++) = northSeg;
+    }
 
-    Segment eastSeg = Segment_CreateFromCoords(b->x, b->y, b->x, b->y + b->h, x, y);
-    *(vector++) = eastSeg;
-
-    //double xinter = Segment_CheckXIntersection(eastSeg, y);
-
-    Segment westSeg = Segment_CreateFromCoords(b->x + b->w, b->y, b->x + b->w, b->y + b->h, x, y);
-    *(vector++) = westSeg;
+    Segment eastSeg;
+    if (xMin != xSource) {
+        eastSeg = Segment_CreateFromCoords(xMin, yMin, xMin, yMax, xSource, ySource);
+        *(vector++) = eastSeg;
+    }
 
     // Intersecção com a reta
-    if (b->x < x && y >= b->y && y <= b->y + b->h) {
+    if (b->x < xSource && ySource > b->y && ySource < b->y + b->h) {
         // Segmento leste
-        double distance = fabs(b->x - x);
-        Point pAbove = Point_Create(b->x, y, eastSeg, -PI, distance);
-        Point oldPStart = Segment_GetPStart(eastSeg);
-        Point oldPEnd = Segment_GetPEnd(eastSeg);
-        Segment_SetPStart(eastSeg, pAbove);
-        Segment_SetPEnd(eastSeg, oldPStart);
-        Point_SetStarting(pAbove, true);
-        Point_SetStarting(oldPStart, false);
-
-        Point pBelow = Point_Create(b->x, y, NULL, PI, distance);
-        Segment newSeg = Segment_Create(oldPEnd, pBelow);
-        Point_SetSegment(pBelow, newSeg);
-        Point_SetSegment(oldPEnd, newSeg);
-        Point_SetStarting(oldPEnd, true);
-        Point_SetStarting(pBelow, false);
-        *(vector++) = newSeg;
-
+        vector = Segment_Cut(eastSeg, vector, b->x, xSource, ySource);
         // Segmento oeste
-        distance = fabs(b->x + b->w - x);
-        pAbove = Point_Create(b->x + b->w, y, westSeg, -PI, distance);
-        oldPStart = Segment_GetPStart(westSeg);
-        oldPEnd = Segment_GetPEnd(westSeg);
-        Segment_SetPStart(westSeg, pAbove);
-        Segment_SetPEnd(westSeg, oldPStart);
-        Point_SetStarting(pAbove, true);
-        Point_SetStarting(oldPStart, false);
-
-        pBelow = Point_Create(b->x + b->w, y, NULL, PI, distance);
-        newSeg = Segment_Create(oldPEnd, pBelow);
-        Point_SetSegment(pBelow, newSeg);
-        Point_SetSegment(oldPEnd, newSeg);
-        Point_SetStarting(oldPEnd, true);
-        Point_SetStarting(pBelow, false);
-        *(vector++) = newSeg;
+        vector = Segment_Cut(westSeg, vector, b->x + b->w, xSource, ySource);
     }
 
     return vector;
