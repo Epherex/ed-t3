@@ -10,7 +10,10 @@ typedef void *Wall;
 
 Wall Wall_Create(double x1, double y1, double x2, double y2);
 
-Segment *Wall_PutSegments(Wall wallVoid, Segment *vector, double x, double y);
+// Posiciona um ou dois segmentos no vetor 'vector' a partir do muro informado,
+// levando em conta se este novo segmento seria cortado pela semirreta partindo
+// das coordenadas de origem e com direção horizontal à esquerda
+Segment *Wall_PutSegments(Wall wallVoid, Segment *vector, double xSource, double ySource);
 
 double Wall_GetX1(Wall wall);
 

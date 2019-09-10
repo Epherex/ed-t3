@@ -27,6 +27,6 @@ double max(double a, double b);
 
 double min(double a, double b);
 
-double calculateAngle(double x, double y);
+double calculateAngle(double y, double x);
 
 #endif

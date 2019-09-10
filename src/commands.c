@@ -207,7 +207,9 @@ bool processGeometry(FILE *entryFile) {
 
             Block b = StList_Find(getBlockList(), compareBlockToCep, cep);
             if (b == NULL) {
+                #ifdef __DEBUG__
                 printf("Erro: Quadra de CEP %s não encontrada!\n", cep);
+                #endif
                 continue;
             }
 
@@ -364,7 +366,7 @@ bool processQuery(FILE *queryFile, FILE *outputFile, FILE *txtFile, char outputD
             double x, y;
             sscanf(buffer + 4, "%lf %lf", &x, &y);
 
-            if (!Query_Brl(outputFile, x, y));
+            if (!Query_Brl(outputFile, x, y))
                 return false;
 
         } else if (strcmp(type, "fi") == 0) {

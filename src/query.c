@@ -102,7 +102,9 @@ bool Query_Overlaps(FILE *txtFile, FILE *outputFile, char idA[], char idB[]) {
     Object a = StList_Find(getObjList(), compareObjectToId, idA);
     Object b = StList_Find(getObjList(), compareObjectToId, idB);
     if (a == NULL || b == NULL) {
+        #ifdef __DEBUG__
         printf("Erro: Elemento não encontrado!\n");
+        #endif
         fprintf(txtFile, "Elemento não encontrado\n\n");
         return true;
     }
@@ -133,7 +135,9 @@ bool Query_Overlaps(FILE *txtFile, FILE *outputFile, char idA[], char idB[]) {
 bool Query_Inside(FILE *txtFile, FILE *outputFile, char id[], double x, double y) {
     Object o = StList_Find(getObjList(), compareObjectToId, id);
     if (o == NULL) {
+        #ifdef __DEBUG__
         printf("Erro: Elemento não encontrado: %s!\n", id);
+        #endif
         fprintf(txtFile, "Elemento não encontrado\n\n");
         return true;
     }
@@ -157,7 +161,9 @@ bool Query_Distance(FILE *txtFile, FILE *outputFile, char j[], char k[]) {
     Object a = StList_Find(getObjList(), compareObjectToId, j);
     Object b = StList_Find(getObjList(), compareObjectToId, k);
     if (a == NULL || b == NULL) {
+        #ifdef __DEBUG__
         printf("Erro: Elemento não encontrado!\n");
+        #endif
         fprintf(txtFile, "Elemento não encontrado\n\n");
         return true;
     }
@@ -194,7 +200,9 @@ bool Query_Dq(FILE *txtFile, char metric[], char id[], double dist) {
     if(e == NULL)
         e = StList_Find(getTLightList(), compareEquipToId, id);
     if(e == NULL) {
+        #ifdef __DEBUG__
         printf("Erro: Elemento não encontrado: %s!\n", id);
+        #endif
         return true;
     }
 
@@ -275,7 +283,9 @@ bool Query_Del(FILE *txtFile, char id[]) {
     }
 
     fprintf(txtFile, "Elemento não encontrado\n\n");
+    #ifdef __DEBUG__
     printf("Erro: Elemento não encontrado: %s!\n", id);
+    #endif
     return true;
 }
 
@@ -319,7 +329,9 @@ bool Query_Crd(FILE *txtFile, char id[]) {
                             eqType, x, y);
     } else {
         fprintf(txtFile, "Elemento não encontrado\n\n");
+        #ifdef __DEBUG__
         printf("Erro: Elemento não encontrado: %s!\n", id);
+        #endif
     }
     return true;
 }
@@ -421,7 +433,9 @@ bool Query_Fh(FILE *txtFile, FILE *outputFile, char signal, int k, char cep[], c
 
     Block b = StList_Find(getBlockList(), compareBlockToCep, cep);
     if (b == NULL) {
+        #ifdef __DEBUG__
         printf("Erro: Elemento não encontrado!\n");
+        #endif
         fprintf(txtFile, "Elemento não encontrado\n\n");
         return true;
     }
@@ -429,7 +443,9 @@ bool Query_Fh(FILE *txtFile, FILE *outputFile, char signal, int k, char cep[], c
     double x, y;
 
     if (!Block_GetCoordinates(b, face, num, &x, &y)) {
+        #ifdef __DEBUG__
         printf("Erro: Direção desconhecida: '%c'!\n", face);
+        #endif
         fprintf(txtFile, "Direção desconhecida: '%c'\n\n", face);
         return true;
     }
@@ -448,7 +464,9 @@ bool Query_Fh(FILE *txtFile, FILE *outputFile, char signal, int k, char cep[], c
         //qsort(distances, n, sizeof(EquipDist), compareDistancesDescending);
         heapsort(distances, n, k, compareDistancesDescending);
     } else {
+        #ifdef __DEBUG__
         printf("Erro: Sinal desconhecido: '%c'!\n", signal);
+        #endif
         fprintf(txtFile, "Sinal desconhecido: '%c'\n\n", signal);
         free(distances);
         return true;
@@ -482,7 +500,9 @@ bool Query_Fs(FILE *txtFile, FILE *outputFile, int k, char cep[], char face, dou
 
     Block b = StList_Find(getBlockList(), compareBlockToCep, cep);
     if (b == NULL) {
+        #ifdef __DEBUG__
         printf("Erro: Elemento não encontrado!\n");
+        #endif
         fprintf(txtFile, "Elemento não encontrado\n\n");
         return true;
     }
@@ -490,7 +510,9 @@ bool Query_Fs(FILE *txtFile, FILE *outputFile, int k, char cep[], char face, dou
     double x, y;
 
     if (!Block_GetCoordinates(b, face, num, &x, &y)) {
+        #ifdef __DEBUG__
         printf("Erro: Direção desconhecida: '%c'!\n", face);
+        #endif
         fprintf(txtFile, "Direção desconhecida: '%c'\n\n", face);
         return true;
     }
@@ -534,7 +556,7 @@ bool Query_Brl(FILE *outputFile, double x, double y) {
     Segment *segments = malloc((nSegments * 2 + 5) * sizeof(Segment));
     Segment *segmentsP = segments;
 
-    double maxX = 0, maxY = 0;
+    double maxX = x, maxY = y;
 
     // Colocar segmentos dos prédios na lista
     for (int p = StList_GetFirstPos(getBuildingList()); p != -1; p = StList_GetNextPos(getBuildingList(), p)) {
@@ -563,6 +585,7 @@ bool Query_Brl(FILE *outputFile, double x, double y) {
     maxX += 100;
     maxY += 100;
 
+    // Bordas da cidade
     Wall borders[4];
     borders[0] = Wall_Create(0, 0, maxX, 0);
     borders[1] = Wall_Create(maxX, 0, maxX, maxY);
@@ -573,9 +596,8 @@ bool Query_Brl(FILE *outputFile, double x, double y) {
         Wall_Destroy(borders[i]);
     }
 
-    //printf("before: %d\n", nSegments);
+    // Novo número de segmentos
     nSegments = segmentsP - segments;
-    //printf("after: %d\n", nSegments);
 
     int nPoints = nSegments * 2;
     Point *points = malloc(nPoints * sizeof(Point));
@@ -585,11 +607,6 @@ bool Query_Brl(FILE *outputFile, double x, double y) {
         Segment s = segments[i];
         points[2 * i] = Segment_GetPStart(s);
         points[2 * i + 1] = Segment_GetPEnd(s);
-
-        // TODO: remover (teste)
-        // Point p1 = Segment_GetPStart(s);
-        // Point p2 = Segment_GetPEnd(s);
-        // putSVGSegment(outputFile, Point_GetX(p1), Point_GetY(p1), Point_GetX(p2), Point_GetY(p2));
     }
 
     // Ordenar pontos
@@ -597,18 +614,18 @@ bool Query_Brl(FILE *outputFile, double x, double y) {
 
     StList activeSegments = StList_Create(nSegments);
 
-    double currentInfX = 0;
-    double currentInfY = y;
-
-    int added = 0, removed = 0;
-
     for (int i = 0; i < nPoints; i++) {
         Point p = points[i];
         Segment s = Point_GetSegment(p);
         double dist = Point_GetDistance(p);
 
         // Coeficiente angular da reta formada pelo ponto central e o ponto atual
-        double a1 = (Point_GetY(p) - y) / (Point_GetX(p) - x);
+        double a1;
+        bool vertical = false;
+        if (Point_GetX(p) == x)
+            vertical = true;
+        else
+            a1 = (Point_GetY(p) - y) / (Point_GetX(p) - x);
         // Termo independente da reta
         double b1 = y - a1 * x;
 
@@ -616,17 +633,13 @@ bool Query_Brl(FILE *outputFile, double x, double y) {
         double minDist = -1;
         Segment closestSegmentBehind = NULL;
         double xInter, yInter;
-        bool front = true;
+        bool inFront = true;
 
-        // TODO: remover (debug)
-        // printf("--------------------\n");
-        // printf("i = %d\n", i + 1);
-        // printf("dist = %lf\n", dist);
-
-        for (int p = StList_GetFirstPos(activeSegments); p != -1; p = StList_GetNextPos(activeSegments, p)) {
-            Segment currentSegment = StList_Get(activeSegments, p);
+        for (int pos = StList_GetFirstPos(activeSegments); pos != -1; pos = StList_GetNextPos(activeSegments, pos)) {
+            Segment currentSegment = StList_Get(activeSegments, pos);
             if (currentSegment == s)
                 continue;
+
             Point p1 = Segment_GetPStart(currentSegment);
             Point p2 = Segment_GetPEnd(currentSegment);
 
@@ -636,26 +649,29 @@ bool Query_Brl(FILE *outputFile, double x, double y) {
             // Evitar divisão por zero
             if (Point_GetX(p2) == Point_GetX(p1)) {
                 currentXInter = Point_GetX(p1);
+                currentYInter = a1 * currentXInter + b1;
             } else {
                 // Coeficiente angular
                 double a2 = (Point_GetY(p2) - Point_GetY(p1)) / (Point_GetX(p2) - Point_GetX(p1));
+
                 // Termo independente
                 double b2 = Point_GetY(p1) - a2 * Point_GetX(p1);
-                currentXInter = (b2 - b1) / (a1 - a2);
-            }
 
-            currentYInter = a1 * currentXInter + b1;
+                if (vertical)
+                    currentXInter = Point_GetX(p);
+                else
+                    currentXInter = (b2 - b1) / (a1 - a2);
+
+                currentYInter = a2 * currentXInter + b2;
+            }
+                
 
             // Distância entre o ponto de intersecção e o ponto central
             double distInter = euclideanDistance(x, y, currentXInter, currentYInter);
 
-            // TODO: remover (debug)
-            // printf("x = %lf  -  y = %lf\n", currentXInter, currentYInter);
-            // printf("distInter = %lf\n", distInter);
-
             // Segmento do ponto analisado não está à frente
             if (distInter < dist || fabs(distInter - dist) < 0.000001) {
-                front = false;
+                inFront = false;
                 break;
             } else if (distInter >= dist && (minDist == -1 || distInter <= minDist)) {
                 minDist = distInter;
@@ -665,7 +681,7 @@ bool Query_Brl(FILE *outputFile, double x, double y) {
             }
         }
 
-        if (front) {
+        if (inFront) {
             // Se o segmento estiver na frente de todos os ativos
             if (!Point_IsStarting(p)) {
                 // Se o ponto for final
@@ -691,29 +707,13 @@ bool Query_Brl(FILE *outputFile, double x, double y) {
         }
 
         if (Point_IsStarting(p)) {
-            StList_Add(activeSegments, s);
-            added++;
-            
+            StList_Add(activeSegments, s);            
         } else {
-            if (StList_Remove(activeSegments, compareAddr, s) == NULL)
-                printf("aaaaaaaaaaaaa\n");
-            removed++;
+            StList_Remove(activeSegments, compareAddr, s);
         }
-
-        // TODO: remover (teste)
-        char id[16];
-        // sprintf(id, "%.2lf", Point_GetAngle(p));
-        // if (Point_IsStarting(p))
-        //     putSVGText(outputFile, Point_GetX(p), Point_GetY(p), id);
-        // else
-        //     putSVGText(outputFile, Point_GetX(p), Point_GetY(p) + 10, id);
-        
     }
 
     putSVGBomb(outputFile, x, y);
-    //putSVGPoint(outputFile, x, y, true);
-
-    printf("added: %d, removed: %d\n", added, removed);
 
     free(points);
 

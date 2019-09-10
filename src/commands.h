@@ -12,6 +12,7 @@
 #include "lists.h"
 #include "comparators.h"
 
+// Processa o arquivo .geo e o .qry, se tiver, escrevendo os resultados nos arquivos de saída
 void processAll(FILE *entryFile, FILE *outputSVGFile, FILE *outputQryFile, FILE *queryFile, 
                 FILE *txtFile, char outputDir[], char svgFileName[]);
 

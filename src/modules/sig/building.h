@@ -9,6 +9,9 @@ typedef void *Building;
 
 Building Building_Create(double x, double y, double w, double h, double num);
 
+// Posiciona quatro ou seis segmentos no vetor 'vector' a partir do prédio informado,
+// levando em conta se os novos segmentos seriam cortados pela semirreta partindo
+// das coordenadas de origem e com direção horizontal à esquerda
 Segment *Building_PutSegments(Building buildingVoid, Segment *vector, double x, double y);
 
 double Building_GetX(Building building);

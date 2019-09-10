@@ -110,6 +110,4 @@ void *StList_Get(StList staticListVoid, int pos);
 //     parameter: parâmetro extra que será passado para a função
 void StList_Execute(StList staticListVoid, void f(void*, void*), void *parameter);
 
-//void oi(StList sv); // REMOVER
-
 #endif

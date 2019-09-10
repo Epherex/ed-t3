@@ -12,6 +12,7 @@ typedef void *Point;
 
 Point Point_Create(double x, double y, Segment segment, double angle, double distance);
 
+// Compara dois pontos para determinar qual é anterior. Para ser usado na função qsort
 int Point_Compare(const void *p1, const void *p2);
 
 double Point_GetX(Point pointVoid);

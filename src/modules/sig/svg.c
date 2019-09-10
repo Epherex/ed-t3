@@ -1,7 +1,7 @@
 #include "svg.h"
 
 void putSVGStart(FILE *file) {
-    fputs("<svg width=\"30000\" height=\"30000\" "
+    fputs("<svg " //width=\"30000\" height=\"30000\" 
           "xmlns=\"http://www.w3.org/2000/svg\" "
           "xmlns:xlink=\"http://www.w3.org/1999/xlink\">\n", file);
 }
